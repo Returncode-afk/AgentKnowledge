@@ -209,7 +209,7 @@ def process_pdf(pdf_path, notebook_path, pages='1-100'):
 
 ### 测试PDF分发
 ```bash
-python d:\hermes agent\opendataloader-pdf-main\scripts\pdf_dispatch.py <pdf_path> <output_dir>
+python opendataloader-pdf-main/scripts/pdf_dispatch.py <pdf_path> <output_dir>
 ```
 
 ### 测试章节检测
@@ -221,5 +221,13 @@ print(check_pdf_has_text('test.pdf'))
 "
 
 # 扫描型
-python d:\hermes agent\opendataloader-pdf-main\scripts\easyocr_chapter_scan.py --pdf test.pdf --notebook output/
+python opendataloader-pdf-main/scripts/easyocr_chapter_scan.py --pdf test.pdf --notebook output/
 ```
+
+---
+
+## 相关文档
+
+- [系统架构](ARCHITECTURE.md)
+- [项目关系图谱](PROJECT_MAP.md)
+- [开发者指南](CLAUDE.md)

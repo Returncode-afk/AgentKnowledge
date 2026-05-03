@@ -1,15 +1,14 @@
- # Hermes Agent - 项目关系图谱
+# Hermes Agent - 项目关系图谱
 
 ## 子项目概览
 
 | 子项目 | 路径 | 功能 |
 |--------|------|------|
-| hermes-agent-main | `d:\hermes agent\hermes-agent-main\` | 核心Agent框架 |
-| wiki个人知识库 | `d:\hermes agent\wiki个人知识库\` | 知识库管理API |
-| opendataloader-pdf-main | `d:\hermes agent\opendataloader-pdf-main\` | PDF解析处理引擎 |
-| easyocr_model | `d:\hermes agent\easyocr_model\` | OCR识别模型 |
-| docker | `d:\hermes agent\docker\` | Docker Desktop配置 |
-| .trae/skills | `d:\hermes agent\.trae\skills\` | Agent技能定义 |
+| hermes-agent-main | `hermes-agent-main/` | 核心Agent框架 |
+| wiki个人知识库 | `wiki个人知识库/` | 知识库管理API |
+| opendataloader-pdf-main | `opendataloader-pdf-main/` | PDF解析处理引擎 |
+| easyocr_model | `easyocr_model/` | OCR识别模型 |
+| .hermes/skills | `.hermes/skills/` | Agent技能定义 |
 
 ---
 
@@ -67,7 +66,7 @@
 
 ### 入口
 ```bash
-cd d:\hermes agent\hermes-agent-main
+cd hermes-agent-main/hermes-agent-main
 python hermes
 ```
 
@@ -128,9 +127,9 @@ pdf_dispatch.py::process_pdf()
             EasyOCR识别 → easyocr_chapter_scan.py::detect_chapters()
 ```
 
-### Python环境
-- `D:\anaconda\envs\chatpdf\` - 包含opendataloader_pdf模块
-- `D:\anaconda\envs\torch310\` - 包含EasyOCR
+### Python环境要求
+- Python 3.10+
+- 依赖: `easyocr`, `pymupdf`
 
 ---
 
@@ -147,17 +146,18 @@ pdf_dispatch.py::process_pdf()
 
 ---
 
-## .trae/skills
+## .hermes/skills
 
-Agent技能定义目录。
+Agent技能定义目录，包含50+预置技能模块。
 
-### 现有技能
-| 技能 | 路径 | 功能 |
-|------|------|------|
-| bug-fix-debugging | `.trae/skills/bug-fix-debugging/` | Bug修复调试 |
-| docker-desktop-fix | `.trae/skills/docker-desktop-fix/` | Docker修复 |
-| hermes-start | `.trae/skills/hermes-start/` | 启动Hermes |
-| ui-testing-checklist | `.trae/skills/ui-testing-checklist/` | UI测试 |
+### 技能分类
+| 分类 | 示例技能 |
+|------|----------|
+| Apple生态 | apple-notes, apple-reminders, imessage |
+| AI Agent | claude-code, codex, hermes-agent |
+| 创意工具 | ascii-art, manim-video, p5js |
+| 开发工具 | github-code-review, bug-fix-debugging |
+| 研究工具 | arxiv, research-paper-writing |
 
 ### 技能结构
 每个技能包含 `SKILL.md` 定义技能行为。
@@ -167,9 +167,22 @@ Agent技能定义目录。
 ## 配置文件
 
 ### 环境变量
-- `JAVA_HOME=D:\JDK21_Final` - Java运行环境
-- `EASYOCR_MODULE_PATH=d:\hermes agent\easyocr_model` - OCR模型路径
+在 `.hermes/.env` 中配置：
+
+| 变量名 | 说明 | 必需 |
+|--------|------|------|
+| `OPENAI_API_KEY` | OpenAI API 密钥 | ✅ 必需 |
+| `OPENAI_BASE_URL` | API 基础URL | 可选 |
+| `EASYOCR_MODULE_PATH` | OCR模型路径 | 可选 |
 
 ### 端口
 - `18090` - knowledge-api.js 服务端口
 - `3000` - hermes-agent-main Web端口（如有）
+
+---
+
+## 相关文档
+
+- [系统架构](ARCHITECTURE.md)
+- [核心算法](ALGORITHMS.md)
+- [开发者指南](CLAUDE.md)

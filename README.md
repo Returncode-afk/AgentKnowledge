@@ -32,12 +32,13 @@ cp .hermes/.env.example .hermes/.env
 
 ### 2. 安装依赖
 
-```powershell
-# Windows 用户
-.\install.ps1
-
-# 或手动安装
+```bash
+# Python 依赖
 pip install -r hermes-agent-main/hermes-agent-main/requirements.txt
+
+# Node.js 依赖
+cd wiki个人知识库
+npm install
 ```
 
 ### 3. OCR 模型配置（可选）
@@ -47,12 +48,12 @@ PDF OCR 功能需要 EasyOCR 模型，首次使用时会自动下载到 `easyocr
 如需手动配置：
 
 ```bash
-# 设置模型存储路径（可选，默认为项目根目录下的 easyocr_model/）
+# 设置模型存储路径（可选）
 # Windows
-set EASYOCR_MODULE_PATH=d:\hermes agent\easyocr_model
+set EASYOCR_MODULE_PATH=./easyocr_model
 
 # Linux/macOS
-export EASYOCR_MODULE_PATH=/path/to/easyocr_model
+export EASYOCR_MODULE_PATH=./easyocr_model
 ```
 
 模型文件约 **500MB**，包含：
@@ -75,7 +76,7 @@ python opendataloader-pdf-main/scripts/pdf_dispatch.py <pdf_path> <output_dir>
 ## 项目结构
 
 ```
-hermes-agent/
+AgentKnowledge/
 ├── .hermes/                    # Hermes 配置目录
 │   ├── .env.example            # 环境变量模板
 │   └── skills/                 # 技能模块
@@ -120,3 +121,7 @@ pip install easyocr pymupdf
 cd wiki个人知识库
 npm install
 ```
+
+## 许可证
+
+本项目基于 MIT 许可证开源。
