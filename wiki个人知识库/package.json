@@ -1,0 +1,13 @@
+{
+  "name": "knowledge-api",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "HiClaw Knowledge Base API",
+  "main": "knowledge-api.js",
+  "scripts": {
+    "start": "node knowledge-api.js"
+  },
+  "dependencies": {
+    "pdf-parse": "^1.1.1"
+  }
+}

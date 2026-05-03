@@ -1,0 +1,75 @@
+# Hermes Agent - Root .gitignore
+
+# 环境变量（含敏感信息）
+.env
+.env.local
+.env.*.local
+
+# Python 虚拟环境
+hermes-venv/
+venv/
+.venv/
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+.eggs/
+dist/
+build/
+
+# OCR 模型文件（体积大，首次使用自动下载）
+easyocr_model/
+!easyocr_model/.gitkeep
+
+# 安装程序
+*.exe
+
+# 日志和会话数据
+.hermes/logs/
+.hermes/sessions/
+*.log
+
+# 数据库文件
+*.db
+*.db-shm
+*.db-wal
+
+# 用户使用痕迹
+.hermes/.hermes_history
+.hermes/.skills_prompt_snapshot.json
+.hermes/interrupt_debug.log
+.hermes/models_dev_cache.json
+.hermes/state.db*
+.hermes/auth.lock
+.hermes/config.yaml
+.hermes/.tirith-install-failed
+
+# 用户知识库数据
+wiki个人知识库/knowledge/Knowledge/
+wiki个人知识库/knowledge/.llmwiki/
+wiki个人知识库/knowledge/wiki/concepts/
+wiki个人知识库/knowledge/wiki/sync/
+
+# IDE 配置
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# Node.js
+node_modules/
+
+# 临时文件
+tmp/
+temp/
+*.tmp
+*.temp
+
+# 用户数据（可选，根据需要调整）
+# wiki个人知识库/knowledge/

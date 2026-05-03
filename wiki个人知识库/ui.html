@@ -1,0 +1,1544 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>知识库</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; height: 100vh; background: #ffffff; color: #37352f; }
+
+.container { display: flex; height: 100vh; }
+
+/* Header - Notion Style */
+.header { display: flex; justify-content: space-between; align-items: center; padding: 12px 24px; background: #ffffff; border-bottom: 1px solid #e9e9e7; }
+.header h1 { font-size: 18px; color: #37352f; font-weight: 600; }
+.header button { padding: 6px 14px; background: #2eaadc; border: none; border-radius: 4px; color: white; cursor: pointer; font-weight: 500; font-size: 14px; transition: background 0.15s; }
+.header button:hover { background: #2596be; }
+.header button:disabled { background: #e9e9e7; color: #9b9a97; cursor: not-allowed; }
+
+/* Compile Status */
+.compile-status { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #9b9a97; }
+.compile-dot { width: 8px; height: 8px; border-radius: 50%; background: #0f7b6c; }
+.compile-dot.compiling { background: #d9730d; animation: pulse 1s infinite; }
+.compile-dot.error { background: #e03e3e; }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+/* Sidebar - Notion Style */
+.sidebar { width: 60px; background: #f7f6f3; display: flex; flex-direction: column; align-items: center; padding-top: 20px; border-right: 1px solid #e9e9e7; }
+.sidebar button { width: 40px; height: 40px; margin-bottom: 8px; border: none; border-radius: 4px; background: transparent; color: #9b9a97; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+.sidebar button:hover { background: #e9e9e7; color: #37352f; }
+.sidebar button.active { background: #2eaadc; color: white; }
+
+/* Main Content */
+.main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+/* Panel Layout */
+.panel-container { flex: 1; display: flex; overflow: hidden; }
+.panel-left { width: 280px; border-right: 1px solid #e9e9e7; display: flex; flex-direction: column; overflow: hidden; background: #fafafa; }
+.panel-right { flex: 1; display: flex; flex-direction: column; overflow: hidden; background: #ffffff; }
+
+/* Panel Header - Notion Style */
+.panel-header { padding: 12px 16px; background: #fafafa; border-bottom: 1px solid #e9e9e7; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.panel-header input[type="text"] { flex: 1; min-width: 100px; padding: 6px 10px; background: #ffffff; border: 1px solid #e9e9e7; border-radius: 4px; color: #37352f; font-size: 14px; transition: border-color 0.15s; }
+.panel-header input[type="text"]:focus { border-color: #2eaadc; outline: none; }
+.panel-header input[type="text"]::placeholder { color: #9b9a97; }
+.panel-header button { padding: 6px 12px; background: #ffffff; border: 1px solid #e9e9e7; border-radius: 4px; color: #37352f; cursor: pointer; font-size: 13px; white-space: nowrap; transition: all 0.15s; }
+.panel-header button:hover { background: #f7f6f3; border-color: #d3d3d1; }
+.panel-header button.primary { background: #2eaadc; border-color: #2eaadc; color: white; }
+.panel-header button.primary:hover { background: #2596be; border-color: #2596be; }
+.panel-header button.danger { background: #e03e3e; border-color: #e03e3e; color: white; }
+.panel-header button.danger:hover { background: #c93535; border-color: #c93535; }
+
+/* Category Tree - Notion Style */
+.category-tree { flex: 1; overflow-y: auto; padding: 8px; }
+.category-item { margin-bottom: 2px; }
+.category-header { padding: 8px 12px; background: transparent; border-radius: 4px; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: background 0.15s; }
+.category-header:hover { background: #e9e9e7; }
+.category-icon { font-size: 16px; }
+.category-name { flex: 1; font-size: 14px; color: #37352f; font-weight: 500; }
+.category-arrow { font-size: 10px; color: #9b9a97; transition: transform 0.2s; }
+.category-header.expanded .category-arrow { transform: rotate(90deg); }
+.subfolders { margin-left: 16px; margin-top: 2px; display: none; }
+.subfolders.show { display: block; }
+.subfolder-item { padding: 6px 12px; margin-bottom: 1px; background: transparent; border-radius: 4px; cursor: pointer; font-size: 13px; color: #6b6b6b; transition: background 0.15s; }
+.subfolder-item:hover { background: #e9e9e7; color: #37352f; }
+.subfolder-item.selected { background: #2eaadc; color: white; }
+.notebooks-in-subfolder { margin-left: 24px; margin-top: 2px; display: none; }
+.notebooks-in-subfolder.show { display: block; }
+.notebook-item { padding: 6px 12px; margin-bottom: 1px; background: transparent; border-radius: 4px; cursor: pointer; font-size: 13px; color: #6b6b6b; transition: background 0.15s; }
+.notebook-item:hover { background: #e9e9e7; color: #37352f; }
+.notebook-item.selected { background: #f7f6f3; border-left: 3px solid #2eaadc; color: #37352f; }
+
+/* List - Notion Style */
+.list { flex: 1; overflow-y: auto; padding: 8px; }
+.list-item { padding: 10px 12px; margin-bottom: 2px; background: transparent; border-radius: 4px; cursor: pointer; transition: background 0.15s; display: flex; align-items: flex-start; gap: 10px; }
+.list-item:hover { background: #f7f6f3; }
+.list-item.selected { background: #f7f6f3; border-left: 3px solid #2eaadc; }
+.list-item-content { flex: 1; min-width: 0; }
+.list-item-title { font-size: 14px; color: #37352f; margin-bottom: 4px; word-break: break-word; }
+.list-item-meta { font-size: 12px; color: #9b9a97; }
+.list-empty { padding: 20px; text-align: center; color: #9b9a97; font-size: 14px; }
+
+/* Editor - Notion Style */
+.editor-toolbar { padding: 8px 16px; background: #ffffff; border-bottom: 1px solid #e9e9e7; display: flex; gap: 8px; align-items: center; }
+.editor-toolbar button { padding: 5px 10px; background: #f7f6f3; border: 1px solid #e9e9e7; border-radius: 4px; color: #6b6b6b; cursor: pointer; font-size: 13px; transition: all 0.15s; }
+.editor-toolbar button:hover { color: #37352f; background: #e9e9e7; border-color: #d3d3d1; }
+.editor-toolbar button.save-btn { background: #0f7b6c; border-color: #0f7b6c; color: white; }
+.editor-toolbar button.save-btn:hover { background: #0a6b5e; border-color: #0a6b5e; }
+.editor-info { flex: 1; font-size: 12px; color: #9b9a97; text-align: right; }
+.editor-textarea { flex: 1; padding: 24px 32px; background: #ffffff; border: none; color: #37352f; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 15px; resize: none; outline: none; line-height: 1.7; }
+.editor-textarea::placeholder { color: #9b9a97; }
+
+/* Upload Area - Notion Style */
+.upload-area { border: 2px dashed #e9e9e7; border-radius: 6px; padding: 40px; text-align: center; margin: 20px; transition: all 0.15s; cursor: pointer; }
+.upload-area:hover { border-color: #2eaadc; background: rgba(46, 170, 220, 0.05); }
+.upload-area-icon { font-size: 48px; margin-bottom: 16px; }
+.upload-area-text { color: #6b6b6b; font-size: 14px; margin-bottom: 8px; }
+.upload-area-hint { color: #9b9a97; font-size: 12px; }
+.upload-area input[type="file"] { display: none; }
+
+/* Sources List */
+.sources-list { padding: 8px; }
+.source-item { padding: 10px 12px; margin-bottom: 2px; background: #f7f6f3; border-radius: 4px; display: flex; align-items: center; gap: 10px; }
+.source-item-icon { font-size: 20px; }
+.source-item-info { flex: 1; }
+.source-item-name { font-size: 14px; color: #37352f; margin-bottom: 4px; }
+.source-item-meta { font-size: 12px; color: #9b9a97; }
+.source-item-delete { padding: 4px 8px; background: #e03e3e; border: none; border-radius: 4px; color: white; cursor: pointer; font-size: 12px; transition: background 0.15s; }
+.source-item-delete:hover { background: #c93535; }
+
+/* Empty State */
+.empty-state { flex: 1; display: flex; align-items: center; justify-content: center; color: #9b9a97; font-size: 14px; }
+
+/* Modal - Notion Style */
+.modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 15, 15, 0.6); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+.modal { background: #ffffff; border-radius: 6px; padding: 24px; width: 360px; max-height: 80vh; overflow-y: auto; box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15); }
+.modal h3 { margin-bottom: 16px; color: #37352f; font-weight: 600; }
+.modal input, .modal select { width: 100%; padding: 8px 10px; background: #ffffff; border: 1px solid #e9e9e7; border-radius: 4px; color: #37352f; margin-bottom: 12px; font-size: 14px; transition: border-color 0.15s; }
+.modal input:focus, .modal select:focus { border-color: #2eaadc; outline: none; }
+.modal select { cursor: pointer; }
+.modal-buttons { display: flex; gap: 8px; justify-content: flex-end; }
+.modal button { padding: 6px 14px; border: none; border-radius: 4px; cursor: pointer; font-weight: 500; font-size: 14px; transition: background 0.15s; }
+.modal .btn-cancel { background: #f7f6f3; color: #6b6b6b; }
+.modal .btn-cancel:hover { background: #e9e9e7; color: #37352f; }
+.modal .btn-confirm { background: #2eaadc; color: white; }
+.modal .btn-confirm:hover { background: #2596be; }
+.modal-label { display: block; margin-bottom: 6px; color: #6b6b6b; font-size: 13px; }
+.modal-radio-group { margin-bottom: 12px; }
+.modal-radio-item { display: flex; align-items: center; padding: 10px; background: #f7f6f3; border-radius: 4px; margin-bottom: 4px; cursor: pointer; transition: background 0.15s; }
+.modal-radio-item:hover { background: #e9e9e7; }
+.modal-radio-item input { margin-right: 10px; accent-color: #2eaadc; }
+.modal-radio-item label { flex: 1; cursor: pointer; color: #37352f; }
+.modal-radio-item .desc { font-size: 11px; color: #9b9a97; }
+
+/* Toast - Notion Style */
+.toast { position: fixed; bottom: 20px; right: 20px; padding: 10px 16px; background: #37352f; border-radius: 4px; color: #fff; font-size: 14px; z-index: 2000; opacity: 0; transition: opacity 0.3s; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15); }
+.toast.show { opacity: 1; }
+.toast.success { background: #0f7b6c; }
+.toast.error { background: #e03e3e; }
+.toast.info { background: #2eaadc; }
+
+/* View Title - Notion Style */
+.view-title { padding: 12px 16px; background: #fafafa; border-bottom: 1px solid #e9e9e7; display: flex; align-items: center; gap: 10px; }
+.view-title-icon { font-size: 20px; }
+.view-title-text { font-size: 16px; color: #37352f; font-weight: 600; }
+.view-title-count { font-size: 12px; color: #9b9a97; }
+
+/* Note Status Indicator - Notion Style */
+.note-status { position: fixed; bottom: 20px; right: 20px; padding: 6px 12px; background: #ffffff; border: 1px solid #e9e9e7; border-radius: 20px; font-size: 12px; display: flex; align-items: center; gap: 8px; z-index: 100; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08); color: #6b6b6b; }
+.note-status-dot { width: 8px; height: 8px; border-radius: 50%; }
+.note-status-dot.synced { background: #0f7b6c; }
+.note-status-dot.unsaved { background: #d9730d; }
+.note-status-dot.modified { background: #e5c07b; }
+.note-status-dot.notcompiled { background: #e03e3e; }
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>📚 知识库</h1>
+  <div class="compile-status">
+    <span class="compile-dot" id="compileDot"></span>
+    <span id="compileStatusText">Wiki 已同步</span>
+  </div>
+  <button id="btnCompile" onclick="compileWiki()">编译Wiki</button>
+</div>
+
+<div class="container">
+  <div class="sidebar">
+    <button id="btnNotes" class="active" onclick="showView('notes')" title="笔记">📝</button>
+    <button id="btnNotebooks" onclick="showView('notebooks')" title="笔记本">📚</button>
+    <button id="btnDocuments" onclick="showView('documents')" title="文档">📄</button>
+    <button id="btnInbox" onclick="showView('inbox')" title="收集箱">📋</button>
+  </div>
+
+  <div class="main">
+    <!-- 笔记视图 -->
+    <div id="notesView" class="panel-container">
+      <div class="panel-left">
+        <div class="panel-header">
+          <button class="primary" onclick="showCreateNoteModal()">+ 新建笔记</button>
+        </div>
+        <div class="list" id="notesList">
+          <div class="list-empty">选择笔记本查看笔记</div>
+        </div>
+      </div>
+      <div class="panel-right">
+        <div class="editor-toolbar">
+          <button class="save-btn" onclick="saveCurrentNote()">💾 保存</button>
+          <button onclick="deleteCurrentNote()">🗑️ 删除</button>
+          <button onclick="showMoveNoteModal()">📦 移动</button>
+          <span class="editor-info" id="editorInfo">未保存</span>
+        </div>
+        <textarea id="noteEditor" class="editor-textarea" placeholder="选择笔记本后点击笔记开始编辑..."></textarea>
+      </div>
+    </div>
+
+    <!-- 笔记本视图 -->
+    <div id="notebooksView" class="panel-container" style="display:none;">
+      <div class="panel-left">
+        <div class="panel-header">
+          <button class="primary" onclick="showCreateNotebookModal()">+ 新建笔记本</button>
+          <button class="danger" onclick="deleteSelectedNotebook()">🗑️ 删除笔记本</button>
+        </div>
+        <div class="category-tree" id="categoryTree"></div>
+      </div>
+      <div class="panel-right">
+        <div id="notebookListPanel">
+          <div class="view-title" id="notebookViewTitle">
+            <span class="view-title-icon">📕</span>
+            <span class="view-title-text" id="selectedNotebookName">选择笔记本</span>
+          </div>
+          <div class="list" id="notebookNotesList">
+            <div class="list-empty">从左侧选择一个笔记本</div>
+          </div>
+        </div>
+        <!-- 视图二-B：笔记本详情页（笔记列表） -->
+        <div id="notebookDetailPanel" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
+          <div class="view-title">
+            <button onclick="closeNotebookDetail()" style="background:#e94560;border:none;color:white;padding:6px 12px;border-radius:6px;cursor:pointer;margin-right:10px;">← 返回</button>
+            <span class="view-title-icon">📕</span>
+            <span class="view-title-text" id="notebookDetailName"></span>
+          </div>
+          <div class="panel-header">
+            <button class="primary" onclick="showCreateNoteInNotebook()">+ 新建笔记</button>
+            <button onclick="document.getElementById('notebookPdfInput').click()">+ 上传PDF</button>
+            <input type="file" id="notebookPdfInput" accept=".pdf" style="display:none" onchange="handleNotebookPdfSelect(event)">
+          </div>
+          <div class="list" id="notebookDetailNotesList" style="flex:1;overflow-y:auto;"></div>
+        </div>
+
+        <!-- 视图二-C：笔记本详情-笔记编辑页 -->
+        <div id="notebookNoteEditPanel" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
+          <div class="view-title">
+            <button onclick="closeNotebookNoteEdit()" style="background:#e94560;border:none;color:white;padding:6px 12px;border-radius:6px;cursor:pointer;margin-right:10px;">← 返回</button>
+            <span class="view-title-icon">📕</span>
+            <span class="view-title-text" id="notebookEditNotebookName"></span>
+            <span class="view-title-text" id="notebookEditNoteTitle"></span>
+          </div>
+          <div class="panel-header">
+            <button onclick="saveNotebookNote()">💾 保存</button>
+            <button class="danger" onclick="deleteNotebookNote()">🗑️ 删除</button>
+            <button onclick="showMoveNoteModal()">📦 移动</button>
+            <button onclick="compileCurrentNote()">📤 编译</button>
+            <span class="editor-info" id="notebookEditEditorInfo">未保存</span>
+          </div>
+          <textarea id="notebookNoteEditEditor" class="editor-textarea" style="flex:1;" placeholder="选择笔记开始编辑..."></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- 文档视图 -->
+    <div id="documentsView" class="panel-container" style="display:none;">
+      <div class="panel-left">
+        <div class="panel-header">
+          <button class="primary" onclick="document.getElementById('fileInput').click()">+ 上传文档</button>
+        </div>
+        <div class="list" id="sourcesList">
+          <div class="list-empty">暂无上传的文档</div>
+        </div>
+      </div>
+      <div class="panel-right">
+        <div class="upload-area" onclick="document.getElementById('fileInput').click()">
+          <div class="upload-area-icon">📄</div>
+          <div class="upload-area-text">拖拽文件到此处或点击选择</div>
+          <div class="upload-area-hint">支持 PDF、TXT、MD 格式</div>
+          <input type="file" id="fileInput" accept=".pdf,.txt,.md" onchange="handleFileSelect(event)">
+        </div>
+      </div>
+    </div>
+
+    <!-- 收集箱视图 -->
+    <div id="inboxView" class="panel-container" style="display:none;">
+      <div class="panel-left">
+        <div class="panel-header">
+          <button onclick="processAllInbox()">⚡ AI处理全部</button>
+        </div>
+        <div class="list" id="inboxList">
+          <div class="list-empty">收集箱暂无内容</div>
+        </div>
+      </div>
+      <div class="panel-right">
+        <div class="editor-toolbar">
+          <span style="color:#888;font-size:14px;">收集箱说明</span>
+        </div>
+        <div class="editor-textarea" style="background:#16213e;overflow-y:auto;" readonly>
+收集箱用于暂存待处理的内容。
+
+使用方法：
+1. 添加文档时选择「收集箱」
+2. 定期让 AI 分析并分类
+
+AI 会分析内容并建议：
+- 应该放到哪个分类
+- 如何命名
+- 是否需要创建新的笔记本
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 创建笔记本弹窗 -->
+<div id="createNotebookModal" class="modal-overlay" style="display:none;">
+  <div class="modal">
+    <h3>📓 新建笔记本</h3>
+    <label class="modal-label">笔记本名称</label>
+    <input type="text" id="newNotebookName" placeholder="输入笔记本名称">
+    <label class="modal-label">保存到分类</label>
+    <div class="modal-radio-group" id="categoryRadioGroup"></div>
+    <label class="modal-label">子文件夹（可选）</label>
+    <select id="subfolderSelect">
+      <option value="">默认</option>
+    </select>
+    <label class="modal-label" style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-top:8px;">
+      <input type="checkbox" id="createNoteInNotebook" style="width:auto;margin:0;">
+      <span>同时在此笔记本中创建笔记</span>
+    </label>
+    <div class="modal-buttons">
+      <button class="btn-cancel" onclick="closeCreateNotebookModal()">取消</button>
+      <button class="btn-confirm" onclick="createNotebook()">确认创建</button>
+    </div>
+  </div>
+</div>
+
+<!-- 创建笔记弹窗 -->
+<div id="createNoteModal" class="modal-overlay" style="display:none;">
+  <div class="modal">
+    <h3>📝 新建笔记</h3>
+    <label class="modal-label">笔记标题</label>
+    <input type="text" id="newNoteTitle" placeholder="输入笔记标题">
+    <label class="modal-label">选择分类</label>
+    <div class="modal-radio-group" id="noteCategoryRadioGroup"></div>
+    <label class="modal-label">选择子文件夹</label>
+    <select id="noteSubfolderSelect">
+      <option value="">请先选择分类</option>
+    </select>
+    <label class="modal-label">选择笔记本</label>
+    <select id="noteNotebookSelect">
+      <option value="">请先选择子文件夹</option>
+    </select>
+    <div class="modal-buttons">
+      <button class="btn-cancel" onclick="closeCreateNoteModal()">取消</button>
+      <button class="btn-confirm" onclick="createNote()">确认创建</button>
+    </div>
+  </div>
+</div>
+
+<!-- 上传文档弹窗 -->
+<div id="uploadModal" class="modal-overlay" style="display:none;">
+  <div class="modal">
+    <h3>📄 上传文档</h3>
+    <div id="uploadFileName" style="color:#e94560;margin-bottom:12px;font-size:14px;"></div>
+    <label class="modal-label">保存到分类</label>
+    <div class="modal-radio-group" id="uploadCategoryRadioGroup"></div>
+    <label class="modal-label">子文件夹</label>
+    <select id="uploadSubfolderSelect">
+      <option value="">默认</option>
+    </select>
+    <div class="modal-buttons">
+      <button class="btn-cancel" onclick="closeUploadModal()">取消</button>
+      <button class="btn-confirm" onclick="confirmUpload()">确认上传</button>
+    </div>
+  </div>
+</div>
+
+<!-- 移动笔记弹窗 -->
+<div id="moveNoteModal" class="modal-overlay" style="display:none;">
+  <div class="modal">
+    <h3>📦 移动笔记到其他笔记本</h3>
+    <div id="moveNoteInfo" style="color:#888;margin-bottom:12px;font-size:13px;"></div>
+    <label class="modal-label">目标笔记本</label>
+    <div class="modal-radio-group" id="moveNoteCategoryRadioGroup"></div>
+    <label class="modal-label">子文件夹</label>
+    <select id="moveNoteSubfolderSelect" onchange="loadMoveNoteNotebooks()">
+      <option value="">请先选择分类</option>
+    </select>
+    <label class="modal-label">目标笔记本</label>
+    <select id="moveNoteNotebookSelect">
+      <option value="">请先选择子文件夹</option>
+    </select>
+    <div class="modal-buttons">
+      <button class="btn-cancel" onclick="closeMoveNoteModal()">取消</button>
+      <button class="btn-confirm" onclick="confirmMoveNote()">确认移动</button>
+    </div>
+  </div>
+</div>
+
+<!-- Note Status Indicator (右下角) -->
+<div id="noteStatusIndicator" class="note-status" style="display:none;">
+  <span class="note-status-dot" id="noteStatusDot"></span>
+  <span id="noteStatusText">已同步</span>
+</div>
+
+<!-- Toast -->
+<div id="toast" class="toast"></div>
+
+<script>
+const API = '';
+const AUTH = 'Bearer hiclaw-knowledge-api';
+
+const CATEGORIES = [
+  { id: "knowledge", name: "Knowledge", label: "知识层", icon: "📚", subfolders: ["管理与领导力", "创业", "个人成长", "教育与回忆"] },
+  { id: "software", name: "Software", label: "技能层", icon: "💻", subfolders: ["AI工具经验", "Claude Code", "OpenClaw配置"] },
+  { id: "lifeos", name: "LifeOS", label: "行动层", icon: "📋", subfolders: ["投资与财经", "生活管理"] },
+  { id: "writing", name: "Writing", label: "产出层", icon: "✍️", subfolders: ["内容素材"] },
+  { id: "notes", name: "Notes", label: "收集箱", icon: "📝", subfolders: ["Inbox"] }
+];
+
+let currentView = 'notes';
+let categories = [];
+let notebooks = [];
+let selectedCategory = null;
+let selectedSubfolder = null;
+let selectedNotebook = null;
+let selectedNoteId = null;
+let currentNoteContent = '';
+let pendingUploadContent = '';
+let pendingUploadFilename = '';
+let noteCompiled = false;
+let noteHasChanges = false;
+
+// 自动保存相关变量
+let autoSaveTimer = null;
+let autoSaveInterval = 5000; // 5秒自动保存
+let lastAutoSaveTime = 0;
+
+function headers() {
+  return { 'Authorization': AUTH, 'Content-Type': 'application/json' };
+}
+
+function toast(msg, type = '') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast' + (type ? ' ' + type : '');
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+function encodePath(pathStr) {
+  return pathStr.split('/').map(s => encodeURIComponent(s)).join('/');
+}
+
+async function api(url, opts = {}) {
+  try {
+    console.log('API call:', url, opts.method || 'GET');
+    const r = await fetch(API + url, { ...opts, headers: { ...headers(), ...(opts.headers || {}) } });
+    if (!r.ok) {
+      const errorText = await r.text();
+      console.error('API error:', r.status, errorText);
+      throw new Error(errorText);
+    }
+    const data = await r.json();
+    console.log('API response:', url, data);
+    return data;
+  } catch (e) {
+    console.error('API exception:', url, e);
+    throw e;
+  }
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function updateNoteStatus(status, text) {
+  const indicator = document.getElementById('noteStatusIndicator');
+  const dot = document.getElementById('noteStatusDot');
+  const statusText = document.getElementById('noteStatusText');
+
+  if (!selectedNoteId) {
+    indicator.style.display = 'none';
+    return;
+  }
+
+  indicator.style.display = 'flex';
+  dot.className = 'note-status-dot ' + status;
+  statusText.textContent = text;
+}
+
+function showView(view) {
+  currentView = view;
+  ['Notes', 'Notebooks', 'Documents', 'Inbox'].forEach(v => {
+    document.getElementById(v.toLowerCase() + 'View').style.display = 'none';
+    document.getElementById('btn' + v).classList.remove('active');
+  });
+  document.getElementById(view + 'View').style.display = 'flex';
+  document.getElementById('btn' + view.charAt(0).toUpperCase() + view.slice(1)).classList.add('active');
+
+  if (view === 'notebooks') loadCategories();
+  if (view === 'notes') renderNotesList();
+  if (view === 'documents') loadSources();
+  if (view === 'inbox') loadInbox();
+}
+
+async function loadCategories() {
+  try {
+    const res = await api('/api/categories');
+    categories = res.categories || CATEGORIES;
+    // 同时加载笔记本列表
+    const notebooksRes = await api('/api/notebooks');
+    notebooks = Array.isArray(notebooksRes) ? notebooksRes : (notebooksRes.notebooks || []);
+    renderCategoryTree();
+  } catch (e) {
+    categories = CATEGORIES;
+    notebooks = [];
+    renderCategoryTree();
+  }
+}
+
+function renderCategoryTree() {
+  const el = document.getElementById('categoryTree');
+  el.innerHTML = categories.map(cat => `
+    <div class="category-item">
+      <div class="category-header ${selectedCategory === cat.id ? 'expanded' : ''}" onclick="toggleCategory('${cat.id}')">
+        <span class="category-icon">${cat.icon}</span>
+        <span class="category-name">${cat.label}</span>
+        <span class="category-arrow">▶</span>
+      </div>
+      <div class="subfolders ${selectedCategory === cat.id ? 'show' : ''}" id="subfolders-${cat.id}">
+        ${cat.subfolders.map(sf => `
+          <div class="subfolder-item ${selectedCategory === cat.id && selectedSubfolder === sf ? 'selected' : ''}"
+               onclick="event.stopPropagation();selectSubfolder('${cat.id}', '${sf}')">
+            📁 ${sf}
+          </div>
+          <div class="notebooks-in-subfolder ${selectedCategory === cat.id && selectedSubfolder === sf ? 'show' : ''}"
+               id="notebooks-${cat.id}-${sf}">
+            ${renderNotebooksInSubfolder(cat.id, sf)}
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderNotebooksInSubfolder(catId, subfolder) {
+  const subNotebooks = notebooks.filter(nb => nb.category === catId && nb.subfolder === subfolder);
+  if (!subNotebooks.length) return '<div class="notebook-item" style="color:#555;font-size:12px;">暂无笔记本</div>';
+  return subNotebooks.map(nb => `
+    <div class="notebook-item ${selectedNotebook && selectedNotebook.id === nb.id ? 'selected' : ''}"
+         onclick="event.stopPropagation();selectNotebook('${nb.id}')">
+      📕 ${escapeHtml(nb.name)}
+    </div>
+  `).join('');
+}
+
+function toggleCategory(catId) {
+  if (selectedCategory === catId) {
+    selectedCategory = null;
+    selectedSubfolder = null;
+  } else {
+    selectedCategory = catId;
+    selectedSubfolder = null;
+  }
+  renderCategoryTree();
+}
+
+function selectSubfolder(catId, subfolder) {
+  selectedCategory = catId;
+  selectedSubfolder = subfolder;
+  renderCategoryTree();
+  loadNotebooksInSubfolder(catId, subfolder);
+}
+
+async function loadNotebooksInSubfolder(catId, subfolder) {
+  try {
+    const res = await api('/api/notebooks');
+    notebooks = Array.isArray(res) ? res : (res.notebooks || []);
+    renderCategoryTree();
+    loadNotebooksForNotes();
+  } catch (e) {
+    notebooks = [];
+  }
+}
+
+async function loadNotebooksForNotes() {
+  try {
+    const res = await api('/api/notebooks');
+    notebooks = Array.isArray(res) ? res : (res.notebooks || []);
+    console.log('loadNotebooksForNotes: loaded', notebooks.length, 'notebooks');
+  } catch (e) {
+    console.error('loadNotebooksForNotes error:', e);
+    notebooks = [];
+  }
+}
+
+function selectNotebook(notebookId) {
+  selectedNotebook = notebooks.find(nb => nb.id === notebookId) || { id: notebookId, name: notebookId.split('/').pop() };
+  document.getElementById('notebookDetailName').textContent = selectedNotebook ? selectedNotebook.name : '';
+  document.getElementById('notebookListPanel').style.display = 'none';
+  document.getElementById('notebookDetailPanel').style.display = 'flex';
+  document.getElementById('notebookNoteEditPanel').style.display = 'none';
+  selectedNoteId = null;
+  loadNotebookDetailNotes(notebookId);
+}
+
+async function loadNotebookDetailNotes(nbId) {
+  try {
+    const res = await api('/api/notebooks/' + encodePath(nbId) + '/notes');
+    const el = document.getElementById('notebookDetailNotesList');
+    const notes = res.notes || [];
+    const pdfs = res.pdfs || [];
+    if (!notes.length && !pdfs.length) {
+      el.innerHTML = '<div class="list-empty">笔记本内暂无笔记</div>';
+      return;
+    }
+    const currentNotebook = notebooks.find(nb => nb.id === nbId);
+    const notebookName = currentNotebook ? currentNotebook.name : nbId;
+    const pdfItems = pdfs.map(n => `
+      <div class="list-item" onclick="showPdfPreview('${escapeHtml(n.id)}', '${nbId}')">
+        <div class="list-item-content">
+          <div class="list-item-title">📕 ${escapeHtml(n.title || '无标题')}</div>
+          <div class="list-item-meta">PDF 文件 | ${n.modified ? new Date(n.modified).toLocaleDateString() : ''}</div>
+        </div>
+      </div>
+    `).join('');
+    const noteItems = notes.map(n => `
+      <div class="list-item" onclick="showNotebookNoteEdit('${n.id}', '${nbId}')">
+        <div class="list-item-content">
+          <div class="list-item-title">📄 ${escapeHtml(n.title || '无标题')}</div>
+          <div class="list-item-meta">📕 ${notebookName} | ${n.modified ? new Date(n.modified).toLocaleDateString() : ''}</div>
+        </div>
+      </div>
+    `).join('');
+    el.innerHTML = pdfItems + noteItems;
+  } catch (e) {
+    document.getElementById('notebookDetailNotesList').innerHTML = '<div class="list-empty">加载失败</div>';
+  }
+}
+
+function closeNotebookDetail() {
+  document.getElementById('notebookDetailPanel').style.display = 'none';
+  document.getElementById('notebookListPanel').style.display = 'flex';
+  selectedNoteId = null;
+  selectedNotebook = null;
+}
+
+function showNotebookNoteEdit(noteId, nbId) {
+  selectedNoteId = noteId;
+  if (nbId) {
+    selectedNotebook = notebooks.find(nb => nb.id === nbId) || { id: nbId, name: nbId.split('/').pop() };
+  }
+  document.getElementById('notebookDetailPanel').style.display = 'none';
+  document.getElementById('notebookNoteEditPanel').style.display = 'flex';
+  document.getElementById('notebookEditNotebookName').textContent = selectedNotebook ? '📕 ' + selectedNotebook.name : '';
+  loadNotebookNoteContent(noteId);
+}
+
+async function loadNotebookNoteContent(noteId) {
+  try {
+    const apiUrl = '/api/notes/' + encodePath(selectedNotebook.id) + '/' + noteId;
+    const res = await api(apiUrl);
+    document.getElementById('notebookNoteEditEditor').value = res.content || '';
+    currentNoteContent = res.content || '';
+    noteHasChanges = false;
+    const noteTitle = res.title || '无标题';
+    document.getElementById('notebookEditNoteTitle').textContent = ' | ' + noteTitle;
+    document.getElementById('notebookEditEditorInfo').textContent = '已加载';
+    startAutoSave();
+
+    const compileRes = await api('/api/compile-state/' + encodeURIComponent(selectedNotebook.id + '/' + noteId));
+    if (compileRes.compiled) {
+      const date = new Date(compileRes.compiledAt);
+      const dateStr = date.toLocaleString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+      updateNoteStatus('synced', '已编译 ' + dateStr);
+    } else {
+      updateNoteStatus('notcompiled', '未编译');
+    }
+  } catch (e) {
+    console.error('loadNotebookNoteContent error:', e);
+    document.getElementById('notebookNoteEditEditor').value = '';
+    currentNoteContent = '';
+    document.getElementById('notebookEditNoteTitle').textContent = '';
+    document.getElementById('notebookEditEditorInfo').textContent = '加载失败: ' + e.message;
+    updateNoteStatus('notcompiled', '未编译');
+  }
+}
+
+function closeNotebookNoteEdit() {
+  stopAutoSave();
+  document.getElementById('notebookNoteEditPanel').style.display = 'none';
+  document.getElementById('notebookDetailPanel').style.display = 'flex';
+  selectedNoteId = null;
+  document.getElementById('notebookNoteEditEditor').value = '';
+  document.getElementById('notebookEditEditorInfo').textContent = '未保存';
+}
+
+async function compileCurrentNote() {
+  if (!selectedNoteId) {
+    toast('请先选择一个笔记', 'error');
+    return;
+  }
+  try {
+    const notePath = selectedNotebook.id + '/' + selectedNoteId;
+    const res = await api('/api/compile/' + encodeURIComponent(notePath), { method: 'POST' });
+    if (res.success) {
+      const date = new Date(res.compiledAt);
+      const dateStr = date.toLocaleString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+      updateNoteStatus('synced', '已编译 ' + dateStr);
+      toast('笔记编译成功', 'success');
+    }
+  } catch (e) {
+    toast('编译失败: ' + e.message, 'error');
+  }
+}
+
+async function saveNotebookNote() {
+  if (!selectedNotebook || !selectedNoteId) {
+    toast('请先选择一个笔记', 'error');
+    return;
+  }
+  const content = document.getElementById('notebookNoteEditEditor').value;
+  try {
+    await api('/api/notes/' + encodePath(selectedNotebook.id) + '/' + selectedNoteId, {
+      method: 'PUT',
+      body: JSON.stringify({ content })
+    });
+    currentNoteContent = content;
+    noteHasChanges = false;
+    document.getElementById('notebookEditEditorInfo').textContent = '已保存';
+    toast('保存成功', 'success');
+  } catch (e) {
+    toast('保存失败: ' + e.message, 'error');
+  }
+}
+
+async function deleteNotebookNote() {
+  if (!selectedNotebook || !selectedNoteId) {
+    toast('请先选择一个笔记', 'error');
+    return;
+  }
+  if (!confirm('确定要删除这篇笔记吗？此操作不可撤销。')) {
+    return;
+  }
+  try {
+    await api('/api/notes/' + encodePath(selectedNotebook.id) + '/' + selectedNoteId, {
+      method: 'DELETE'
+    });
+    toast('删除成功', 'success');
+    closeNotebookNoteEdit();
+  } catch (e) {
+    toast('删除失败: ' + e.message, 'error');
+  }
+}
+
+async function saveCurrentNote() {
+  if (!selectedNotebook || !selectedNoteId) {
+    toast('请先选择一个笔记', 'error');
+    return;
+  }
+  const content = document.getElementById('noteEditor').value;
+  try {
+    await api('/api/notes/' + encodePath(selectedNotebook.id) + '/' + selectedNoteId, {
+      method: 'PUT',
+      body: JSON.stringify({ content })
+    });
+    currentNoteContent = content;
+    noteHasChanges = false;
+    document.getElementById('editorInfo').textContent = '已保存';
+    toast('保存成功', 'success');
+    renderNotesList();
+  } catch (e) {
+    toast('保存失败: ' + e.message, 'error');
+  }
+}
+
+async function deleteCurrentNote() {
+  if (!selectedNotebook || !selectedNoteId) {
+    toast('请先选择一个笔记', 'error');
+    return;
+  }
+  if (!confirm('确定要删除这篇笔记吗？此操作不可撤销。')) {
+    return;
+  }
+  try {
+    await api('/api/notes/' + encodePath(selectedNotebook.id) + '/' + selectedNoteId, {
+      method: 'DELETE'
+    });
+    toast('删除成功', 'success');
+    selectedNoteId = null;
+    document.getElementById('noteEditor').value = '';
+    currentNoteContent = '';
+    document.getElementById('editorInfo').textContent = '未选中';
+    updateNoteStatus('', '未选中');
+    renderNotesList();
+  } catch (e) {
+    toast('删除失败: ' + e.message, 'error');
+  }
+}
+
+function showCreateNoteInNotebook() {
+  if (!selectedNotebook) {
+    toast('请先选择一个笔记本', 'error');
+    return;
+  }
+  document.getElementById('newNoteTitle').value = '';
+  document.getElementById('noteCategoryRadioGroup').innerHTML = '';
+  document.getElementById('noteSubfolderSelect').innerHTML = '<option value="">' + selectedNotebook.category + '</option>';
+  document.getElementById('noteNotebookSelect').innerHTML = '<option value="' + selectedNotebook.id + '">' + selectedNotebook.name + '</option>';
+  document.getElementById('createNoteModal').style.display = 'flex';
+}
+
+async function loadNotebookNotes(nbId) {
+  try {
+    const res = await api('/api/notebooks/' + encodePath(nbId) + '/notes');
+    const el = document.getElementById('notebookNotesList');
+    const notes = res.notes || [];
+    const pdfs = res.pdfs || [];
+    if (!notes.length && !pdfs.length) {
+      el.innerHTML = '<div class="list-empty">笔记本内暂无笔记</div>';
+      return;
+    }
+    const currentNotebook = notebooks.find(nb => nb.id === nbId);
+    const notebookName = currentNotebook ? currentNotebook.name : nbId;
+    const pdfItems = pdfs.map(n => `
+      <div class="list-item" onclick="showPdfPreview('${escapeHtml(n.id)}', '${nbId}')">
+        <div class="list-item-content">
+          <div class="list-item-title">📕 ${escapeHtml(n.title || '无标题')}</div>
+          <div class="list-item-meta">PDF 文件 | ${n.modified ? new Date(n.modified).toLocaleDateString() : ''}</div>
+        </div>
+      </div>
+    `).join('');
+    const noteItems = notes.map(n => `
+      <div class="list-item ${n.id === selectedNoteId ? 'selected' : ''}" onclick="editNote('${n.id}', '${nbId}')">
+        <div class="list-item-content">
+          <div class="list-item-title">📄 ${escapeHtml(n.title || '无标题')}</div>
+          <div class="list-item-meta">📕 ${notebookName} | ${n.modified ? new Date(n.modified).toLocaleDateString() : ''}</div>
+        </div>
+      </div>
+    `).join('');
+    el.innerHTML = pdfItems + noteItems;
+  } catch (e) {
+    document.getElementById('notebookNotesList').innerHTML = '<div class="list-empty">加载失败</div>';
+  }
+}
+
+function editNote(noteId, notebookId) {
+  if (selectedNoteId === noteId) {
+    selectedNoteId = null;
+    document.getElementById('noteEditor').value = '';
+    currentNoteContent = '';
+    document.getElementById('editorInfo').textContent = '未选中';
+    updateNoteStatus('', '未选中');
+    renderNotesList();
+    return;
+  }
+  selectedNoteId = noteId;
+  if (notebookId) {
+    selectedNotebook = notebooks.find(nb => nb.id === notebookId) || { id: notebookId, name: notebookId.split('/').pop() };
+  }
+  loadNoteContent(noteId);
+  renderNotesList();
+}
+
+async function loadNoteContent(noteId) {
+  console.log('loadNoteContent called: noteId=', noteId, 'selectedNotebook=', selectedNotebook);
+  try {
+    const apiUrl = '/api/notes/' + encodePath(selectedNotebook.id) + '/' + noteId;
+    console.log('API URL:', apiUrl);
+    const res = await api(apiUrl);
+    document.getElementById('noteEditor').value = res.content || '';
+    currentNoteContent = res.content || '';
+    noteHasChanges = false;
+    noteCompiled = false;
+    startAutoSave();
+    document.getElementById('editorInfo').textContent = '已加载';
+
+    const compileRes = await api('/api/compile-state/' + encodeURIComponent(selectedNotebook.id + '/' + noteId));
+    if (compileRes.compiled) {
+      const date = new Date(compileRes.compiledAt);
+      const dateStr = date.toLocaleString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+      updateNoteStatus('synced', '已编译 ' + dateStr);
+    } else {
+      updateNoteStatus('notcompiled', '未编译');
+    }
+  } catch (e) {
+    document.getElementById('noteEditor').value = '';
+    currentNoteContent = '';
+    noteHasChanges = false;
+    noteCompiled = false;
+    document.getElementById('editorInfo').textContent = '加载失败';
+    updateNoteStatus('notcompiled', '未编译');
+  }
+}
+
+// 自动保存函数
+async function autoSaveCurrentNote() {
+  if (!selectedNoteId || !selectedNotebook) return;
+  
+  const isNotebookView = document.getElementById('notebookNoteEditPanel').style.display !== 'none';
+  const editorId = isNotebookView ? 'notebookNoteEditEditor' : 'noteEditor';
+  const infoId = isNotebookView ? 'notebookEditEditorInfo' : 'editorInfo';
+  
+  const content = document.getElementById(editorId).value;
+  if (content === currentNoteContent) return;
+  
+  try {
+    await api('/api/notes/' + encodePath(selectedNotebook.id) + '/' + selectedNoteId, {
+      method: 'PUT',
+      body: JSON.stringify({ content })
+    });
+    currentNoteContent = content;
+    noteHasChanges = true;
+    noteCompiled = false;
+    lastAutoSaveTime = Date.now();
+    document.getElementById(infoId).textContent = '自动保存 ' + new Date().toLocaleTimeString();
+    if (!isNotebookView) {
+      updateNoteStatus('modified', '未编译');
+    }
+    console.log('Auto saved at', new Date().toLocaleTimeString(), 'view:', isNotebookView ? 'notebook' : 'notes');
+  } catch (e) {
+    console.error('Auto save failed:', e);
+    document.getElementById(infoId).textContent = '自动保存失败';
+  }
+}
+
+// 启动自动保存定时器
+function startAutoSave() {
+  if (autoSaveTimer) clearInterval(autoSaveTimer);
+  autoSaveTimer = setInterval(autoSaveCurrentNote, autoSaveInterval);
+}
+
+// 停止自动保存定时器
+function stopAutoSave() {
+  if (autoSaveTimer) {
+    clearInterval(autoSaveTimer);
+    autoSaveTimer = null;
+  }
+}
+
+async function saveCurrentNote() {
+  if (!selectedNoteId || !selectedNotebook) {
+    toast('请先选择一个笔记本和笔记', 'error');
+    return;
+  }
+  const content = document.getElementById('noteEditor').value;
+  if (content === currentNoteContent) {
+    toast('内容没有变化', 'info');
+    return;
+  }
+  try {
+    await api('/api/notes/' + encodePath(selectedNotebook.id) + '/' + selectedNoteId, {
+      method: 'PUT',
+      body: JSON.stringify({ content })
+    });
+    currentNoteContent = content;
+    noteHasChanges = true;
+    noteCompiled = false;
+    toast('已保存', 'success');
+    document.getElementById('editorInfo').textContent = '已保存 ' + new Date().toLocaleTimeString();
+    updateNoteStatus('modified', '未编译');
+    loadNotebookNotes(selectedNotebook.id);
+  } catch (e) {
+    toast('保存失败: ' + e.message, 'error');
+  }
+}
+
+async function deleteCurrentNote() {
+  if (!selectedNoteId || !selectedNotebook) {
+    toast('请先选择要删除的笔记', 'error');
+    return;
+  }
+  if (!confirm('确定删除此笔记？')) return;
+  try {
+    await api('/api/notes/' + encodePath(selectedNotebook.id) + '/' + selectedNoteId, { method: 'DELETE' });
+    toast('已删除', 'success');
+    selectedNoteId = null;
+    document.getElementById('noteEditor').value = '';
+    currentNoteContent = '';
+    document.getElementById('editorInfo').textContent = '未保存';
+    renderNotesList();
+  } catch (e) {
+    toast('删除失败: ' + e.message, 'error');
+  }
+}
+
+async function showCreateNoteModal() {
+  console.log('Opening create note modal...');
+  
+  // 重置所有选择
+  document.getElementById('newNoteTitle').value = '';
+  document.getElementById('noteSubfolderSelect').innerHTML = '<option value="">请先选择分类</option>';
+  document.getElementById('noteNotebookSelect').innerHTML = '<option value="">请先选择子文件夹</option>';
+  
+  // 加载分类选择
+  const radioGroup = document.getElementById('noteCategoryRadioGroup');
+  radioGroup.innerHTML = CATEGORIES.map(cat => `
+    <div class="modal-radio-item" onclick="selectNoteCategory('${cat.id}', this)">
+      <input type="radio" name="noteCategory" value="${cat.id}">
+      <label>
+        ${cat.icon} ${cat.label}
+        <div class="desc">${cat.subfolders.join('、')}</div>
+      </label>
+    </div>
+  `).join('');
+  
+  // 加载笔记本数据
+  try {
+    await loadNotebooksForNotes();
+    console.log('Loaded notebooks:', notebooks);
+  } catch (e) {
+    console.error('Failed to load notebooks:', e);
+    toast('加载笔记本失败: ' + e.message, 'error');
+  }
+  
+  document.getElementById('createNoteModal').style.display = 'flex';
+  console.log('Modal displayed');
+}
+
+function selectNoteCategory(catId, el) {
+  el.querySelector('input').checked = true;
+  const cat = CATEGORIES.find(c => c.id === catId);
+  
+  // 更新子文件夹选择
+  const subfolderSelect = document.getElementById('noteSubfolderSelect');
+  subfolderSelect.innerHTML = '<option value="">请选择子文件夹</option>' + 
+    cat.subfolders.map(sf => `<option value="${sf}">${sf}</option>`).join('');
+  
+  // 清空笔记本选择
+  document.getElementById('noteNotebookSelect').innerHTML = '<option value="">请先选择子文件夹</option>';
+  
+  // 保存当前选择的分类
+  subfolderSelect.dataset.category = catId;
+  
+  // 添加子文件夹变化监听
+  subfolderSelect.onchange = function() {
+    const subfolder = this.value;
+    const category = this.dataset.category;
+    if (subfolder && category) {
+      loadNotebooksForSelect(category, subfolder);
+    }
+  };
+}
+
+function loadNotebooksForSelect(category, subfolder) {
+  const notebookSelect = document.getElementById('noteNotebookSelect');
+  
+  // 过滤该分类和子文件夹下的笔记本
+  const filteredNotebooks = notebooks.filter(nb => 
+    nb.category === category && nb.subfolder === subfolder
+  );
+  
+  if (!filteredNotebooks.length) {
+    notebookSelect.innerHTML = '<option value="">该分类下暂无笔记本</option>';
+  } else {
+    notebookSelect.innerHTML = '<option value="">请选择笔记本</option>' + 
+      filteredNotebooks.map(nb => `<option value="${nb.id}">${nb.name}</option>`).join('');
+  }
+}
+
+function closeCreateNoteModal() {
+  document.getElementById('createNoteModal').style.display = 'none';
+}
+
+async function createNote() {
+  const title = document.getElementById('newNoteTitle').value.trim();
+  const notebookId = document.getElementById('noteNotebookSelect').value;
+  if (!title) { toast('请输入笔记标题', 'error'); return; }
+  if (!notebookId) { toast('请选择笔记本', 'error'); return; }
+
+  try {
+    const res = await api('/api/notebooks/' + encodePath(notebookId) + '/notes', {
+      method: 'POST',
+      body: JSON.stringify({ title, content: '# ' + title + '\n\n' })
+    });
+    toast('笔记已创建', 'success');
+    closeCreateNoteModal();
+    selectNotebook(notebookId);
+    editNote(res.id);
+  } catch (e) {
+    toast('创建失败: ' + e.message, 'error');
+  }
+}
+
+function showMoveNoteModal() {
+  if (!selectedNoteId || !selectedNotebook) {
+    toast('请先选择要移动的笔记', 'error');
+    return;
+  }
+  
+  document.getElementById('moveNoteInfo').textContent = '当前笔记: ' + (selectedNoteId || '');
+  
+  const radioGroup = document.getElementById('moveNoteCategoryRadioGroup');
+  radioGroup.innerHTML = categories.map(cat => `
+    <div class="modal-radio-item" onclick="selectMoveNoteCategory('${cat.id}', this)">
+      <input type="radio" name="moveNoteCategory" value="${cat.id}">
+      <label>
+        ${cat.icon} ${cat.label}
+        <div class="desc">${cat.subfolders.join('、')}</div>
+      </label>
+    </div>
+  `).join('');
+  
+  document.getElementById('moveNoteSubfolderSelect').innerHTML = '<option value="">请先选择分类</option>';
+  document.getElementById('moveNoteNotebookSelect').innerHTML = '<option value="">请先选择子文件夹</option>';
+  
+  document.getElementById('moveNoteModal').style.display = 'flex';
+}
+
+function selectMoveNoteCategory(catId, el) {
+  el.querySelector('input').checked = true;
+  const cat = categories.find(c => c.id === catId);
+  
+  const subfolderSelect = document.getElementById('moveNoteSubfolderSelect');
+  subfolderSelect.innerHTML = '<option value="">请选择子文件夹</option>' + 
+    cat.subfolders.map(sf => `<option value="${sf}">${sf}</option>`).join('');
+  
+  document.getElementById('moveNoteNotebookSelect').innerHTML = '<option value="">请先选择子文件夹</option>';
+  
+  subfolderSelect.dataset.category = catId;
+}
+
+function loadMoveNoteNotebooks() {
+  const subfolderSelect = document.getElementById('moveNoteSubfolderSelect');
+  const notebookSelect = document.getElementById('moveNoteNotebookSelect');
+  const category = subfolderSelect.dataset.category;
+  const subfolder = subfolderSelect.value;
+  
+  if (!category || !subfolder) {
+    notebookSelect.innerHTML = '<option value="">请先选择分类和子文件夹</option>';
+    return;
+  }
+  
+  const filteredNotebooks = notebooks.filter(nb => 
+    nb.category === category && nb.subfolder === subfolder && nb.id !== selectedNotebook.id
+  );
+  
+  if (!filteredNotebooks.length) {
+    notebookSelect.innerHTML = '<option value="">该分类下暂无其他笔记本</option>';
+  } else {
+    notebookSelect.innerHTML = '<option value="">请选择笔记本</option>' + 
+      filteredNotebooks.map(nb => `<option value="${nb.id}">${nb.name}</option>`).join('');
+  }
+}
+
+function closeMoveNoteModal() {
+  document.getElementById('moveNoteModal').style.display = 'none';
+}
+
+async function confirmMoveNote() {
+  const toNotebookId = document.getElementById('moveNoteNotebookSelect').value;
+  if (!toNotebookId) { toast('请选择目标笔记本', 'error'); return; }
+  if (!selectedNoteId || !selectedNotebook) { toast('请先选择要移动的笔记', 'error'); return; }
+  
+  try {
+    await api('/api/notes/move', {
+      method: 'POST',
+      body: JSON.stringify({
+        fromNotebookId: selectedNotebook.id,
+        noteId: selectedNoteId,
+        toNotebookId: toNotebookId
+      })
+    });
+    toast('笔记已移动', 'success');
+    closeMoveNoteModal();
+    
+    const newNotebook = notebooks.find(nb => nb.id === toNotebookId);
+    selectedNotebook = newNotebook;
+    renderNotesList();
+  } catch (e) {
+    toast('移动失败: ' + e.message, 'error');
+  }
+}
+
+async function showCreateNotebookModal() {
+  await loadCategories();
+  const radioGroup = document.getElementById('categoryRadioGroup');
+  radioGroup.innerHTML = categories.map(cat => `
+    <div class="modal-radio-item" onclick="selectCategoryRadio('${cat.id}', this)">
+      <input type="radio" name="category" value="${cat.id}">
+      <label>
+        ${cat.icon} ${cat.label}
+        <div class="desc">${cat.subfolders.join('、')}</div>
+      </label>
+    </div>
+  `).join('');
+
+  document.getElementById('newNotebookName').value = '';
+  document.getElementById('subfolderSelect').innerHTML = '<option value="">选择分类后选择子文件夹</option>';
+  document.getElementById('createNotebookModal').style.display = 'flex';
+}
+
+function selectCategoryRadio(catId, el) {
+  el.querySelector('input').checked = true;
+  const cat = categories.find(c => c.id === catId);
+  const select = document.getElementById('subfolderSelect');
+  select.innerHTML = '<option value="">默认</option>' + cat.subfolders.map(sf => `<option value="${sf}">${sf}</option>`).join('');
+}
+
+function closeCreateNotebookModal() {
+  document.getElementById('createNotebookModal').style.display = 'none';
+}
+
+async function createNotebook() {
+  const name = document.getElementById('newNotebookName').value.trim();
+  const catRadio = document.querySelector('input[name="category"]:checked');
+  const subfolder = document.getElementById('subfolderSelect').value;
+  const createNoteChecked = document.getElementById('createNoteInNotebook').checked;
+
+  if (!name) { toast('请输入笔记本名称', 'error'); return; }
+  if (!catRadio) { toast('请选择分类', 'error'); return; }
+
+  const categoryId = catRadio.value;
+  const cat = categories.find(c => c.id === categoryId);
+  const actualSubfolder = subfolder || cat.subfolders[0];
+
+  try {
+    // 创建笔记本
+    const notebook = await api('/api/notebooks', {
+      method: 'POST',
+      body: JSON.stringify({ name, category: categoryId, subfolder: actualSubfolder })
+    });
+    
+    // 如果勾选了"同时创建笔记"，则在新笔记本中创建一个默认笔记
+    if (createNoteChecked) {
+      const notebookId = `${categoryId}/${actualSubfolder}/${name}`;
+      await api('/api/notebooks/' + encodePath(notebookId) + '/notes', {
+        method: 'POST',
+        body: JSON.stringify({ title: name, content: '# ' + name + '\n\n' })
+      });
+      toast('笔记本和默认笔记已创建', 'success');
+    } else {
+      toast('笔记本已创建', 'success');
+    }
+    
+    closeCreateNotebookModal();
+    loadCategories();
+  } catch (e) {
+    toast('创建失败: ' + e.message, 'error');
+  }
+}
+
+async function deleteSelectedNotebook() {
+  if (!selectedNotebook) {
+    toast('请先选择要删除的笔记本', 'error');
+    return;
+  }
+  if (!confirm('确定删除笔记本"' + selectedNotebook.name + '"？此操作不可恢复。')) return;
+  
+  try {
+    await api('/api/notebooks/' + encodePath(selectedNotebook.id), { method: 'DELETE' });
+    toast('笔记本已删除', 'success');
+    selectedNotebook = null;
+    document.getElementById('selectedNotebookName').textContent = '选择笔记本';
+    document.getElementById('notebookNotesList').innerHTML = '<div class="list-empty">从左侧选择一个笔记本</div>';
+    loadCategories();
+  } catch (e) {
+    toast('删除失败: ' + e.message, 'error');
+  }
+}
+
+async function renderNotesList() {
+  const el = document.getElementById('notesList');
+  
+  try {
+    const res = await api('/api/all-notes');
+    const notes = Array.isArray(res) ? res : (res.notes || []);
+    
+    if (!notes.length) {
+      el.innerHTML = '<div class="list-empty">暂无笔记，请先创建笔记本和笔记</div>';
+      return;
+    }
+    
+    el.innerHTML = notes.map(n => `
+      <div class="list-item ${n.id === selectedNoteId ? 'selected' : ''}" onclick="editNote('${n.id}', '${n.notebook?.id || n.notebookId || ''}')">
+        <div class="list-item-content">
+          <div class="list-item-title">📄 ${escapeHtml(n.title || '无标题')}</div>
+          <div class="list-item-meta">📕 ${n.notebook?.name || n.notebookName || n.notebookId || ''}</div>
+        </div>
+      </div>
+    `).join('');
+  } catch (e) {
+    el.innerHTML = '<div class="list-empty">加载失败</div>';
+  }
+}
+
+async function loadSources() {
+  try {
+    const res = await api('/api/sources');
+    const sources = res.sources || [];
+    const el = document.getElementById('sourcesList');
+    if (!sources.length) {
+      el.innerHTML = '<div class="list-empty">暂无上传的文档</div>';
+      return;
+    }
+    el.innerHTML = sources.map(s => `
+      <div class="source-item">
+        <span class="source-item-icon">📄</span>
+        <div class="source-item-info">
+          <div class="source-item-name">${escapeHtml(s.name)}</div>
+          <div class="source-item-meta">${(s.size / 1024).toFixed(1)} KB | ${new Date(s.modified).toLocaleDateString()}</div>
+        </div>
+        <button class="source-item-delete" onclick="deleteSource('${escapeHtml(s.name)}')">删除</button>
+      </div>
+    `).join('');
+  } catch (e) {
+    document.getElementById('sourcesList').innerHTML = '<div class="list-empty">加载失败</div>';
+  }
+}
+
+async function deleteSource(filename) {
+  if (!confirm('确定删除此文档？')) return;
+  try {
+    await api('/api/sources/' + encodeURIComponent(filename), { method: 'DELETE' });
+    toast('已删除', 'success');
+    loadSources();
+  } catch (e) {
+    toast('删除失败: ' + e.message, 'error');
+  }
+}
+
+function handleFileSelect(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const content = e.target.result;
+    if (file.name.endsWith('.pdf')) {
+      toast('PDF 暂不支持自动解析，请转换为 TXT 或 MD', 'info');
+      return;
+    }
+    pendingUploadContent = content;
+    pendingUploadFilename = file.name;
+    showUploadModal();
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+
+async function handleNotebookPdfSelect(event) {
+  const file = event.target.files[0];
+  if (!file || !file.name.endsWith('.pdf')) return;
+
+  if (!selectedNotebook) {
+    toast('请先选择一个笔记本', 'error');
+    event.target.value = '';
+    return;
+  }
+
+  toast('正在上传并解析 PDF...', 'info');
+
+  const reader = new FileReader();
+  reader.onload = async function(e) {
+    const pdfBase64 = e.target.result.split(',')[1];
+    try {
+      const res = await api('/api/upload-pdf', {
+        method: 'POST',
+        body: JSON.stringify({
+          notebookId: selectedNotebook.id,
+          pdfBase64: pdfBase64,
+          filename: file.name
+        })
+      });
+
+      if (res.success) {
+        toast(`PDF 解析完成，共 ${res.totalPages} 页`, 'success');
+        loadNotebookNotes(selectedNotebook.id);
+      } else {
+        toast('PDF 解析失败: ' + res.error, 'error');
+      }
+    } catch (err) {
+      toast('上传失败: ' + err.message, 'error');
+    }
+  };
+  reader.readAsDataURL(file);
+  event.target.value = '';
+}
+
+async function showPdfPreview(pdfId, nbId) {
+  const notebookPath = nbId;
+  const notesDir = path.join(notebookPath, "notes");
+  const pdfPath = path.join(notesDir, pdfId);
+
+  try {
+    const res = await api('/api/pdf/' + encodePath(nbId) + '/' + encodeURIComponent(pdfId));
+    if (res.content) {
+      const blob = base64ToBlob(res.content, 'application/pdf');
+      const url = URL.createObjectURL(blob);
+      window.open(url, '_blank');
+      setTimeout(() => URL.revokeObjectURL(url), 10000);
+    } else {
+      toast('无法加载 PDF', 'error');
+    }
+  } catch (e) {
+    toast('加载失败: ' + e.message, 'error');
+  }
+}
+
+function base64ToBlob(base64, mimeType) {
+  const byteCharacters = atob(base64);
+  const byteNumbers = new Array(byteCharacters.length);
+  for (let i = 0; i < byteCharacters.length; i++) {
+    byteNumbers[i] = byteCharacters.charCodeAt(i);
+  }
+  const byteArray = new Uint8Array(byteNumbers);
+  return new Blob([byteArray], { type: mimeType });
+}
+
+function showUploadModal() {
+  document.getElementById('uploadFileName').textContent = pendingUploadFilename;
+
+  const radioGroup = document.getElementById('uploadCategoryRadioGroup');
+  radioGroup.innerHTML = categories.map(cat => `
+    <div class="modal-radio-item" onclick="selectUploadCategory('${cat.id}', this)">
+      <input type="radio" name="uploadCategory" value="${cat.id}">
+      <label>
+        ${cat.icon} ${cat.label}
+        <div class="desc">${cat.subfolders.join('、')}</div>
+      </label>
+    </div>
+  `).join('');
+
+  document.getElementById('uploadSubfolderSelect').innerHTML = '<option value="">选择分类后选择子文件夹</option>';
+  document.getElementById('uploadModal').style.display = 'flex';
+}
+
+function selectUploadCategory(catId, el) {
+  el.querySelector('input').checked = true;
+  const cat = categories.find(c => c.id === catId);
+  const select = document.getElementById('uploadSubfolderSelect');
+  select.innerHTML = '<option value="">默认</option>' + cat.subfolders.map(sf => `<option value="${sf}">${sf}</option>`).join('');
+}
+
+function closeUploadModal() {
+  document.getElementById('uploadModal').style.display = 'none';
+  pendingUploadContent = '';
+  pendingUploadFilename = '';
+}
+
+async function confirmUpload() {
+  const catRadio = document.querySelector('input[name="uploadCategory"]:checked');
+  const subfolder = document.getElementById('uploadSubfolderSelect').value;
+
+  if (!catRadio) { toast('请选择分类', 'error'); return; }
+
+  try {
+    await api('/api/sources', {
+      method: 'POST',
+      body: JSON.stringify({ filename: pendingUploadFilename, content: pendingUploadContent })
+    });
+    toast('文档已上传到 sources', 'success');
+    closeUploadModal();
+    loadSources();
+  } catch (e) {
+    toast('上传失败: ' + e.message, 'error');
+  }
+}
+
+async function loadInbox() {
+  const el = document.getElementById('inboxList');
+  try {
+    const cat = categories.find(c => c.id === 'notes');
+    const subfolder = cat.subfolders[0];
+    const res = await api('/api/notebooks');
+    notebooks = Array.isArray(res) ? res : (res.notebooks || []);
+    const inboxNotebooks = notebooks.filter(nb => nb.path === 'notes/Inbox');
+    if (!inboxNotebooks.length) {
+      el.innerHTML = '<div class="list-empty">收集箱暂无内容</div>';
+      return;
+    }
+    const notes = [];
+    for (const nb of inboxNotebooks) {
+      const r = await api('/api/notebooks/' + encodePath(nb.id) + '/notes');
+      notes.push(...(r.notes || []).map(n => ({ ...n, notebookName: nb.name })));
+    }
+    if (!notes.length) {
+      el.innerHTML = '<div class="list-empty">收集箱暂无内容</div>';
+      return;
+    }
+    el.innerHTML = notes.map(n => `
+      <div class="list-item">
+        <div class="list-item-content">
+          <div class="list-item-title">📄 ${escapeHtml(n.title || '无标题')}</div>
+          <div class="list-item-meta">${n.modified ? new Date(n.modified).toLocaleDateString() : ''}</div>
+        </div>
+      </div>
+    `).join('');
+  } catch (e) {
+    el.innerHTML = '<div class="list-empty">加载失败</div>';
+  }
+}
+
+function processAllInbox() {
+  toast('AI 处理功能开发中...', 'info');
+}
+
+async function compileWiki() {
+  if (!selectedNotebook) {
+    toast('请先在笔记本视图中选择一个笔记本', 'error');
+    return;
+  }
+
+       if (!selectedNoteId) {
+    toast('请先选择要编译的笔记', 'error');
+    return;
+  }
+
+  const btn = document.getElementById('btnCompile');
+  const dot = document.getElementById('compileDot');
+  const statusText = document.getElementById('compileStatusText');
+
+  btn.disabled = true;
+  dot.className = 'compile-dot compiling';
+  statusText.textContent = '编译中...';
+
+  try {
+    const notePath = selectedNotebook.id + '/' + selectedNoteId;
+    const res = await api('/api/compile/' + encodeURIComponent(notePath), { method: 'POST' });
+    dot.className = 'compile-dot';
+    if (res.warning) {
+      statusText.textContent = '编译完成（有警告）';
+      toast('编译完成: ' + res.warning, 'info');
+    } else {
+      statusText.textContent = 'Wiki 已同步';
+      toast('笔记编译成功', 'success');
+    }
+    if (selectedNoteId) {
+      updateNoteStatus('synced', '已编译');
+    }
+  } catch (e) {
+    dot.className = 'compile-dot error';
+    statusText.textContent = '编译失败';
+    toast('编译失败: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// 页面加载时预加载笔记本数据
+loadNotebooksForNotes().then(() => {
+  console.log('Notebooks preloaded:', notebooks.length);
+});
+
+showView('notes');
+
+// 页面关闭前自动保存
+window.addEventListener('beforeunload', function(e) {
+  if (noteHasChanges && selectedNoteId && selectedNotebook) {
+    autoSaveCurrentNote();
+  }
+});
+</script>
+</body>
+</html>
