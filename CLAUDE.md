@@ -12,29 +12,28 @@ Hermes Agent 是一个多功能的 AI 助手项目，包含知识库管理、PDF
 ## 子项目结构
 
 ```
-d:\hermes agent\
-├── hermes-agent-main/          # 核心Agent框架
-├── wiki个人知识库/              # 知识库管理系统
-│   └── MODULE.md              # Wiki模块详细说明
+AgentKnowledge/
+├── .hermes/                   # Hermes 配置目录
+│   └── skills/                # 技能模块
+├── hermes-agent-main/         # 核心Agent框架
+├── wiki个人知识库/             # 知识库管理系统
 ├── opendataloader-pdf-main/   # PDF解析处理
-│   └── MODULE.md              # PDF模块详细说明
-├── easyocr_model/             # OCR模型
-├── docker/                    # Docker配置
-└── .trae/skills/              # Agent技能
+└── easyocr_model/             # OCR模型（首次使用自动下载）
 ```
 
 ## 快速开始
 
 ### 启动知识库API
 ```bash
-cd d:\hermes agent\wiki个人知识库
+cd wiki个人知识库
+npm install
 npm start
 # 运行在 http://localhost:18090
 ```
 
-### 测试PDF上传
+### PDF处理（命令行）
 ```bash
-node d:\hermes agent\wiki个人知识库\test-pdf.cjs
+python opendataloader-pdf-main/scripts/pdf_dispatch.py <pdf_path> <output_dir>
 ```
 
 ## 核心算法位置
@@ -54,75 +53,44 @@ node d:\hermes agent\wiki个人知识库\test-pdf.cjs
 3. 文字型PDF → fitz提取 → `splitByChapters()` 章节划分
 4. 扫描型PDF → EasyOCR识别 → `detect_chapters()` 章节划分
 
-### 关键配置
-- Python聊天环境: `D:\anaconda\envs\chatpdf\python.exe`
-- Python Torch环境: `D:\anaconda\envs\torch310\python.exe`
-- Java环境: `D:\JDK21_Final`
-- EasyOCR模型路径: `d:\hermes agent\easyocr_model`
-
 ## 环境依赖
 
 ### Python 环境
 
-| 环境名称 | Python版本 | 路径 | 用途 |
-|----------|------------|------|------|
-| hermes | Python 3.10 | `D:\anaconda\envs\hermes\` | Hermes Agent 运行时（专用） |
-| torch310 | Python 3.10.20 | `D:\anaconda\envs\torch310\` | 扫描型PDF处理（OCR） |
-| chatpdf | Python 3.8.20 | `D:\anaconda\envs\chatpdf\` | PDF文字型处理 |
-| base | Python 3.9.23 | `D:\anaconda\` | 系统基础环境 |
-
-### hermes 环境需要安装的库
-
-需要安装的库：
-```bash
-pip install openai python-dotenv fire httpx rich tenacity prompt_toolkit pyyaml requests jinja2 pydantic>=2.0 PyJWT[crypto] debugpy firecrawl-py parallel-web>=0.4.2 fal-client edge-tts croniter python-telegram-bot[webhooks]>=22.6 discord.py>=2.0 aiohttp>=3.9.0
-```
-
-或使用 requirements.txt：
-```bash
-cd d:\hermes agent\hermes-agent-main\hermes-agent-main
-pip install -r requirements.txt
-```
-
-### 快速启动 Hermes
-
-```powershell
-# 1. 激活环境
-conda activate hermes
-
-# 2. 设置环境变量
-$env:HERMES_HOME = "d:\hermes agent\.hermes"
-$env:PYTHONIOENCODING = "utf-8"
-$env:CHCP = "65001"
-
-# 3. 启动 Hermes
-python -m hermes_cli.main chat --toolsets hermes-cli
-```
-
----
-
-## 创建 Hermes 专属环境
-
-### 环境要求
-- **Python 版本**: 3.10+
-- **推荐环境名**: `hermes`
-
-### 需要安装的库
+**要求**: Python 3.10+
 
 ```bash
-openai python-dotenv fire httpx rich tenacity prompt_toolkit pyyaml requests jinja2 pydantic>=2.0 PyJWT[crypto] debugpy firecrawl-py parallel-web>=0.4.2 fal-client edge-tts croniter python-telegram-bot[webhooks]>=22.6 discord.py>=2.0 aiohttp>=3.9.0
-```
-
-### 创建命令
-
-```powershell
-# 1. 创建环境
+# 创建虚拟环境
 conda create -n hermes python=3.10 -y
-
-# 2. 激活并安装依赖
 conda activate hermes
-pip install openai python-dotenv fire httpx rich tenacity prompt_toolkit pyyaml requests jinja2 pydantic>=2.0 PyJWT[crypto] debugpy firecrawl-py parallel-web>=0.4.2 fal-client edge-tts croniter python-telegram-bot[webhooks]>=22.6 discord.py>=2.0 aiohttp>=3.9.0
+
+# 安装依赖
+pip install -r hermes-agent-main/hermes-agent-main/requirements.txt
 ```
+
+### Node.js 环境
+
+**要求**: Node.js 18+
+
+```bash
+cd wiki个人知识库
+npm install
+```
+
+### 环境变量配置
+
+复制环境变量模板并配置：
+
+```bash
+cp .hermes/.env.example .hermes/.env
+```
+
+编辑 `.hermes/.env`，填入必要的 API Key：
+
+| 变量名 | 说明 | 必需 |
+|--------|------|------|
+| `OPENAI_API_KEY` | OpenAI API 密钥 | ✅ 必需 |
+| `OPENAI_BASE_URL` | API 基础URL（兼容服务） | 可选 |
 
 ## 开发约定
 
@@ -130,14 +98,6 @@ pip install openai python-dotenv fire httpx rich tenacity prompt_toolkit pyyaml 
 2. 修改 `knowledge-api.js` 后需重启API服务
 3. 修改Python脚本后无需重启，直接生效
 
-## 调试
+## 许可证
 
-查看API日志:
-```bash
-# API运行在 terminal_id=4
-```
-
-测试PDF处理:
-```bash
-python d:\hermes agent\opendataloader-pdf-main\scripts\pdf_dispatch.py <pdf_path> <output_dir>
-```
+本项目基于 MIT 许可证开源。
